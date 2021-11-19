@@ -14,4 +14,6 @@ class CYCLERACINGPROJECT_API ACycleRacingProjectGameModeBase : public AGameModeB
 {
 	GENERATED_BODY()
 	
+public:
+	ACycleRacingProjectGameModeBase();
 };
