@@ -72,6 +72,8 @@ public:
 	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly)
 	bool bInReverseGear;
 
+
+
 	FVector InternalCameraOrigin;
 
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
