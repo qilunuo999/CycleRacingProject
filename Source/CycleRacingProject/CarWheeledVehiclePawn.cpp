@@ -19,6 +19,7 @@
 #include "GameFramework/Controller.h"
 #include "UObject/ConstructorHelpers.h"
 #include "GameFramework/PlayerController.h"
+#include "Public/EventSystem.h"
 
 #ifndef HMD_MODULE_INCLUDED
 #define HMD_MODULE_INCLUDED 0
@@ -173,6 +174,7 @@ ACarWheeledVehiclePawn::ACarWheeledVehiclePawn()
 
 	bIsLowFriction = false;
 	bInReverseGear = false;
+	CanPlay = false;
 }
 
 void ACarWheeledVehiclePawn::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -196,21 +198,27 @@ void ACarWheeledVehiclePawn::SetupPlayerInputComponent(class UInputComponent* Pl
 
 void ACarWheeledVehiclePawn::MoveForward(float Value)
 {
-	if (Value > 0)
+	if (CanPlay == true)
 	{
-		GetVehicleMovementComponent()->SetThrottleInput(Value);
-		GetVehicleMovementComponent()->SetBrakeInput(0.f);
-	}
-	else
-	{
-		GetVehicleMovementComponent()->SetThrottleInput(0.f);
-		GetVehicleMovementComponent()->SetBrakeInput(-Value);
+		if (Value > 0)
+		{
+			GetVehicleMovementComponent()->SetThrottleInput(Value);
+			GetVehicleMovementComponent()->SetBrakeInput(0.f);
+		}
+		else
+		{
+			GetVehicleMovementComponent()->SetThrottleInput(0.f);
+			GetVehicleMovementComponent()->SetBrakeInput(-Value);
+		}
 	}
 }
 
 void ACarWheeledVehiclePawn::MoveRight(float Value)
 {
-	GetVehicleMovementComponent()->SetSteeringInput(Value);
+	if (CanPlay == true)
+	{
+		GetVehicleMovementComponent()->SetSteeringInput(Value);
+	}
 }
 
 void ACarWheeledVehiclePawn::OnHandbrakePressed()
@@ -309,6 +317,16 @@ void ACarWheeledVehiclePawn::BeginPlay()
 	EnableIncarView(bWantInCar);
 	// Start an engine sound playing
 	EngineSoundComponent->Play();
+
+	UEventSystem* EventSystem = UEventSystem::GetInstance();
+	if (EventSystem)
+	{
+		if (&(EventSystem->OnInitialize()) != nullptr)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("CarWheeledVehiclePawn Reference is not null!"));
+			EventSystem->OnInitialize().AddDynamic(this, &ACarWheeledVehiclePawn::OnSetCanPlay);
+		}
+	}
 }
 
 void ACarWheeledVehiclePawn::OnResetVR()
@@ -378,6 +396,11 @@ void ACarWheeledVehiclePawn::UpdatePhysicsMaterial()
 			bIsLowFriction = true;
 		}
 	}
+}
+
+void ACarWheeledVehiclePawn::OnSetCanPlay(bool PlayState)
+{
+	CanPlay = PlayState;
 }
 
 #undef LOCTEXT_NAMESPACE

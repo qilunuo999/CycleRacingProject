@@ -80,6 +80,9 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION()
+	void OnSetCanPlay(bool PlayState);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -115,6 +118,8 @@ private:
 	UPhysicalMaterial* SlipperyMaterial;
 
 	UPhysicalMaterial* NonSlipperyMaterial;
+
+	bool CanPlay;
 
 public:
 
