@@ -7,7 +7,7 @@
 
 UCarWheelFront::UCarWheelFront()
 {
-	WheelRadius = 18.f;
+	WheelRadius = 32.f;
 	WheelWidth = 20.0f;
 	FrictionForceMultiplier = 2.0f;
 	CorneringStiffness = 500.0f;

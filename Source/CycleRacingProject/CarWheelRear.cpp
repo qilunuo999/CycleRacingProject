@@ -6,7 +6,7 @@
 
 UCarWheelRear::UCarWheelRear()
 {
-	WheelRadius = 18.f;
+	WheelRadius = 32.f;
 	WheelWidth = 20.0f;
 	FrictionForceMultiplier = 2.0f;
 	CorneringStiffness = 500.0f;
@@ -22,4 +22,5 @@ UCarWheelRear::UCarWheelRear()
 	SuspensionMaxRaise = 8;
 	SuspensionMaxDrop = 12.0f;
 	WheelLoadRatio = 0.5f;
+	SuspensionDampingRatio = 0.3f;
 }

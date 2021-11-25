@@ -3,9 +3,24 @@
 
 #include "EventSystem.h"
 
-UEventSystem* UEventSystem::SingletonInstance = nullptr;
+AEventSystem* AEventSystem::SingletonInstance = nullptr;
 
-UEventSystem::UEventSystem()
+AEventSystem::AEventSystem(const FObjectInitializer& ObjectInitializer):Super(ObjectInitializer)
 {
 
+}
+
+void AEventSystem::BroadcastStopCarEvent()
+{
+	StopCarEvent.Broadcast();
+}
+
+void AEventSystem::BroadcastPlayGameEvent()
+{
+	InitEvent.Broadcast(true);
+}
+
+void AEventSystem::BroadcastResetCarEngineRMPEvent()
+{
+	ResetCarEngineRMP.Broadcast();
 }

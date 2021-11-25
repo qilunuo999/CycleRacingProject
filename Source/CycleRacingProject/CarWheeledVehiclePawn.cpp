@@ -19,7 +19,8 @@
 #include "GameFramework/Controller.h"
 #include "UObject/ConstructorHelpers.h"
 #include "GameFramework/PlayerController.h"
-#include "Public/EventSystem.h"
+#include "Public/VehicleGameMode.h"
+#include "Kismet/GameplayStatics.h"
 
 #ifndef HMD_MODULE_INCLUDED
 #define HMD_MODULE_INCLUDED 0
@@ -42,10 +43,10 @@ PRAGMA_DISABLE_DEPRECATION_WARNINGS
 ACarWheeledVehiclePawn::ACarWheeledVehiclePawn()
 {
 	// Car mesh
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> CarMesh(TEXT("/Game/VehicleAdv/Vehicle/Vehicle_SkelMesh.Vehicle_SkelMesh"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> CarMesh(TEXT("SkeletalMesh'/Game/Cars/Sedan/Meshes/Sedan.Sedan'"));
 	GetMesh()->SetSkeletalMesh(CarMesh.Object);
 
-	static ConstructorHelpers::FClassFinder<UObject> AnimBPClass(TEXT("/Game/VehicleAdv/Vehicle/VehicleAnimationBlueprint"));
+	static ConstructorHelpers::FClassFinder<UObject> AnimBPClass(TEXT("/Game/Cars/Sedan/Blueprints/Car_Animation"));
 	GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
 	GetMesh()->SetAnimInstanceClass(AnimBPClass.Class);
 
@@ -63,25 +64,25 @@ ACarWheeledVehiclePawn::ACarWheeledVehiclePawn()
 	VehicleMovement->WheelSetups.SetNum(4);
 	{
 		VehicleMovement->WheelSetups[0].WheelClass = UCarWheelFront::StaticClass();
-		VehicleMovement->WheelSetups[0].BoneName = FName("PhysWheel_FL");
+		VehicleMovement->WheelSetups[0].BoneName = FName("F_L_Wheel");
 		VehicleMovement->WheelSetups[0].AdditionalOffset = FVector(0.f, -8.f, 0.f);
 
 		VehicleMovement->WheelSetups[1].WheelClass = UCarWheelFront::StaticClass();
-		VehicleMovement->WheelSetups[1].BoneName = FName("PhysWheel_FR");
+		VehicleMovement->WheelSetups[1].BoneName = FName("F_R_Wheel");
 		VehicleMovement->WheelSetups[1].AdditionalOffset = FVector(0.f, 8.f, 0.f);
 
 		VehicleMovement->WheelSetups[2].WheelClass = UCarWheelRear::StaticClass();
-		VehicleMovement->WheelSetups[2].BoneName = FName("PhysWheel_BL");
+		VehicleMovement->WheelSetups[2].BoneName = FName("B_L_Wheel");
 		VehicleMovement->WheelSetups[2].AdditionalOffset = FVector(0.f, -8.f, 0.f);
 
 		VehicleMovement->WheelSetups[3].WheelClass = UCarWheelRear::StaticClass();
-		VehicleMovement->WheelSetups[3].BoneName = FName("PhysWheel_BR");
+		VehicleMovement->WheelSetups[3].BoneName = FName("B_R_Wheel");
 		VehicleMovement->WheelSetups[3].AdditionalOffset = FVector(0.f, 8.f, 0.f);
 	}
 
 	// Engine 
 	// Torque setup
-	VehicleMovement->EngineSetup.MaxRPM = 5700.0f;
+	VehicleMovement->EngineSetup.MaxRPM = 6000.0f;
 	VehicleMovement->EngineSetup.MaxTorque = 500.0f;
 	VehicleMovement->EngineSetup.TorqueCurve.GetRichCurve()->Reset();
 	VehicleMovement->EngineSetup.TorqueCurve.GetRichCurve()->AddKey(0.0f, 400.0f);
@@ -174,7 +175,6 @@ ACarWheeledVehiclePawn::ACarWheeledVehiclePawn()
 
 	bIsLowFriction = false;
 	bInReverseGear = false;
-	CanPlay = false;
 }
 
 void ACarWheeledVehiclePawn::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -198,7 +198,7 @@ void ACarWheeledVehiclePawn::SetupPlayerInputComponent(class UInputComponent* Pl
 
 void ACarWheeledVehiclePawn::MoveForward(float Value)
 {
-	if (CanPlay == true)
+	if (VehicleGameMode->CurrentGameState == EGameState::EPlaying)
 	{
 		if (Value > 0)
 		{
@@ -215,7 +215,7 @@ void ACarWheeledVehiclePawn::MoveForward(float Value)
 
 void ACarWheeledVehiclePawn::MoveRight(float Value)
 {
-	if (CanPlay == true)
+	if (VehicleGameMode->CurrentGameState == EGameState::EPlaying)
 	{
 		GetVehicleMovementComponent()->SetSteeringInput(Value);
 	}
@@ -297,6 +297,11 @@ void ACarWheeledVehiclePawn::Tick(float DeltaTime)
 	UChaosWheeledVehicleMovementComponent* WheeledVehicle = static_cast<UChaosWheeledVehicleMovementComponent*>(GetVehicleMovement());
 	float RPMToAudioScale = 2500.0f / WheeledVehicle->GetEngineMaxRotationSpeed();
 	EngineSoundComponent->SetFloatParameter(EngineAudioRPM, WheeledVehicle->GetEngineRotationSpeed() * RPMToAudioScale);
+
+	if (VehicleGameMode->CurrentGameState == EGameState::EForceStop)
+	{
+		StopCar();
+	}
 }
 
 void ACarWheeledVehiclePawn::BeginPlay()
@@ -318,15 +323,7 @@ void ACarWheeledVehiclePawn::BeginPlay()
 	// Start an engine sound playing
 	EngineSoundComponent->Play();
 
-	UEventSystem* EventSystem = UEventSystem::GetInstance();
-	if (EventSystem)
-	{
-		if (&(EventSystem->OnInitialize()) != nullptr)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("CarWheeledVehiclePawn Reference is not null!"));
-			EventSystem->OnInitialize().AddDynamic(this, &ACarWheeledVehiclePawn::OnSetCanPlay);
-		}
-	}
+	VehicleGameMode = Cast<AVehicleGameMode>(UGameplayStatics::GetGameMode(this));
 }
 
 void ACarWheeledVehiclePawn::OnResetVR()
@@ -398,9 +395,14 @@ void ACarWheeledVehiclePawn::UpdatePhysicsMaterial()
 	}
 }
 
-void ACarWheeledVehiclePawn::OnSetCanPlay(bool PlayState)
+void ACarWheeledVehiclePawn::ResetEngineRMP()
 {
-	CanPlay = PlayState;
+
+}
+
+void ACarWheeledVehiclePawn::StopCar()
+{
+	GetVehicleMovementComponent()->SetHandbrakeInput(true);
 }
 
 #undef LOCTEXT_NAMESPACE

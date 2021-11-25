@@ -4,34 +4,50 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "GameFramework/Actor.h"
 #include "EventSystem.generated.h"
 
 /**
  * 
  */
-UCLASS()
-class CYCLERACINGPROJECT_API UEventSystem : public UObject
+UCLASS(BlueprintType, Blueprintable)
+class CYCLERACINGPROJECT_API AEventSystem : public AActor
 {
 	GENERATED_BODY()
 	
 public:
-	UEventSystem();
-	static UEventSystem* GetInstance()
+	AEventSystem(const FObjectInitializer& ObjectInitializer);
+
+	UFUNCTION(BlueprintCallable, Category = "DelegateActor")
+	static AEventSystem* GetInstance()
 	{
-		if (UEventSystem::SingletonInstance == nullptr)
+		if (AEventSystem::SingletonInstance == nullptr)
 		{
-			UEventSystem::SingletonInstance = NewObject<UEventSystem>();
+			AEventSystem::SingletonInstance = NewObject<AEventSystem>(GEngine->GameSingleton);
 		}
-		return UEventSystem::SingletonInstance;
+		return AEventSystem::SingletonInstance;
 	}
 
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCarDelegate, bool, GameState);
+	DECLARE_EVENT(AEventSystem, FStopCarDelegate)
+	DECLARE_EVENT(AEventSystem, FResetCarEngineRMP)
+	DECLARE_EVENT_OneParam(AEventSystem, FCarDelegate, bool)
 
-	UPROPERTY(BlueprintAssignable, Category = "DelegateActor")
-	FCarDelegate InitEvent;
+	FCarDelegate& OnPlayGameEvent() { return InitEvent; }
+	FStopCarDelegate& OnStopCarEvent() { return StopCarEvent; }
+	FResetCarEngineRMP& OnResetCarEngineRMPEvent() { return ResetCarEngineRMP; }
 
-	FCarDelegate& OnInitialize() { return InitEvent; }
+	void BroadcastStopCarEvent();
+
+	void BroadcastPlayGameEvent();
+
+	void BroadcastResetCarEngineRMPEvent();
 
 private:
-	static UEventSystem* SingletonInstance;
+	static AEventSystem* SingletonInstance;
+
+	FCarDelegate InitEvent;
+
+	FStopCarDelegate StopCarEvent;
+
+	FResetCarEngineRMP ResetCarEngineRMP;
 };

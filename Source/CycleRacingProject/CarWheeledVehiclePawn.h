@@ -12,6 +12,7 @@ class USpringArmComponent;
 class UTextRenderComponent;
 class UInputComponent;
 class UAudioComponent;
+class AVehicleGameMode;
 
 PRAGMA_DISABLE_DEPRECATION_WARNINGS
 
@@ -72,16 +73,15 @@ public:
 	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly)
 	bool bInReverseGear;
 
-
-
 	FVector InternalCameraOrigin;
 
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 
 	virtual void Tick(float DeltaTime) override;
 
-	UFUNCTION()
-	void OnSetCanPlay(bool PlayState);
+	void ResetEngineRMP();
+
+	void StopCar();
 
 protected:
 	virtual void BeginPlay() override;
@@ -119,7 +119,7 @@ private:
 
 	UPhysicalMaterial* NonSlipperyMaterial;
 
-	bool CanPlay;
+	AVehicleGameMode* VehicleGameMode;
 
 public:
 
